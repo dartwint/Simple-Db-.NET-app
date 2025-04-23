@@ -32,6 +32,7 @@ namespace EmployeesDBApp
         {
             groupBoxCRUD.Enabled = false;
             dataGridView1.Enabled = false;
+            dataGridView1.ReadOnly = true;
 
             textBoxRecordsCount.Text = "30";
         }
@@ -53,22 +54,6 @@ namespace EmployeesDBApp
             var records = _dbContext?.Employees.Take(0).ToList();
             dataGridView1.DataSource = records;
             dataGridView1.Columns["EmployeeID"].ReadOnly = true;
-        }
-
-        private void textBoxRecordsCount_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!IsValidInput(textBoxRecordsCount, e.KeyChar, NumberRegex()))
-            {
-                e.Handled = true;
-            }
-        }
-
-        private void textBoxIdFilter_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!IsValidInput(textBoxIdFilter, e.KeyChar, NumberRegex()))
-            {
-                e.Handled = true;
-            }
         }
 
         private void OnCRUDOperationStart()
@@ -121,12 +106,14 @@ namespace EmployeesDBApp
 
         private void buttonAddRecord_Click(object sender, EventArgs e)
         {
-
+            FormEditRecord formEditRecord = new FormEditRecord(FormEditRecord.OperationType.Insert);
+            formEditRecord.ShowDialog();
         }
 
         private void buttonUpdateRecord_Click(object sender, EventArgs e)
         {
-
+            FormEditRecord formEditRecord = new FormEditRecord(FormEditRecord.OperationType.Update);
+            formEditRecord.ShowDialog();
         }
 
         private void buttonDeleteRecord_Click(object sender, EventArgs e)
@@ -137,6 +124,14 @@ namespace EmployeesDBApp
         private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
         {
             _dbContext?.Dispose();
+        }
+
+        private void textBoxBlockInvalidKeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (sender is TextBox tb && !IsValidInput(tb, e.KeyChar, NumberRegex()))
+            {
+                e.Handled = true;
+            }
         }
     }
 }
