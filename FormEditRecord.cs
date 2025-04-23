@@ -1,28 +1,24 @@
 ﻿using EmployeesDbApp.DbModel;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace EmployeesDbApp
 {
     public partial class FormEditRecord : Form
     {
-        public event Action<Employee>? OnOpPerformRequested;
+        public event Action<object, OperationType, Employee>? OnOpPerformRequested;
+        private Employee _record;
+        private OperationType _operationType;
 
         public enum OperationType
         {
             Insert, Update
         }
 
-        public FormEditRecord(OperationType operationType)
+        public FormEditRecord(OperationType operationType, Employee employee)
         {
             InitializeComponent();
+
+            _record = employee;
+            _operationType = operationType;
 
             switch (operationType)
             {
@@ -37,6 +33,15 @@ namespace EmployeesDbApp
                         break;
                     }
             }
+        }
+
+        private void FormEditRecord_Load(object sender, EventArgs e)
+        {
+            textBoxFirstName.Text = _record.FirstName;
+            textBoxLastName.Text = _record.LastName;
+            textBoxSalary.Text = _record.Salary.ToString();
+            textBoxEmail.Text = _record.Email;
+            dateTimePickerDateOfBirth.Value = _record.DateOfBirth.ToDateTime(TimeOnly.MinValue);
         }
 
         private void textBoxFirstName_TextChanged(object sender, EventArgs e)
@@ -66,14 +71,13 @@ namespace EmployeesDbApp
 
         private void buttonPerformOp_Click(object sender, EventArgs e)
         {
-            OnOpPerformRequested?.Invoke(new Employee()
-            {
-                FirstName = textBoxFirstName.Text,
-                LastName = textBoxLastName.Text,
-                Email = textBoxEmail.Text,
-                DateOfBirth = DateOnly.FromDateTime(dateTimePickerDateOfBirth.Value),
-                Salary = decimal.Parse(textBoxSalary.Text)
-            });
+            _record.FirstName = textBoxFirstName.Text;
+            _record.LastName = textBoxLastName.Text;
+            _record.Email = textBoxEmail.Text;
+            _record.DateOfBirth = DateOnly.FromDateTime(dateTimePickerDateOfBirth.Value);
+            _record.Salary = decimal.Parse(textBoxSalary.Text);
+
+            OnOpPerformRequested?.Invoke(this, _operationType, _record);
         }
     }
 }

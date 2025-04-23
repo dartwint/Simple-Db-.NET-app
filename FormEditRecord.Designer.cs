@@ -219,6 +219,7 @@
             Controls.Add(tableLayoutPanel1);
             Name = "FormEditRecord";
             Text = "FormEditRecord";
+            Load += FormEditRecord_Load;
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             ResumeLayout(false);

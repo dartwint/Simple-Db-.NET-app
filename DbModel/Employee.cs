@@ -26,6 +26,13 @@ namespace EmployeesDbApp.DbModel
         public required decimal Salary { get; set; }
 
         public static Employee CreateDefault() =>
-            new Employee() { FirstName = "", LastName = "", DateOfBirth = DateOnly.MinValue, Email = "@", Salary = 0 };
+            new Employee() 
+            { 
+                FirstName = "", 
+                LastName = "", 
+                DateOfBirth = DateOnly.FromDateTime(DateTime.Today), 
+                Email = "@", 
+                Salary = 0
+            };
     }
 }

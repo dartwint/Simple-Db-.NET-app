@@ -5,8 +5,6 @@ namespace EmployeesDbApp.ConnectionSetup
 {
     internal class ConnectionService
     {
-        //public static event Action<ApplicationDbContext>? OnDatabaseCreated;
-
         public static async Task<ApplicationDbContext?> TestDatabaseConnectionAsync()
         {
             var config = DbConfigManager.LoadConfig();
@@ -53,7 +51,6 @@ namespace EmployeesDbApp.ConnectionSetup
             bool dbWasCreated = await context.Database.EnsureCreatedAsync();
             if (dbWasCreated)
             {
-                //OnDatabaseCreated?.Invoke(context);
                 context.WriteDummyRecords();
             }
 
