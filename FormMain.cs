@@ -1,5 +1,8 @@
 using EmployeesDbApp;
 using EmployeesDbApp.DbModel;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
 namespace EmployeesDBApp
@@ -8,11 +11,12 @@ namespace EmployeesDBApp
     {
         private ApplicationDbContext? _dbContext;
 
+        private ContextMenuStrip? _contextMenuStrip1;
+
+        private BindingList<Employee> _employeesBList;
+
         [GeneratedRegex(@"^(0|[1-9]\d*)$")]
         private static partial Regex NumberRegex();
-
-        [GeneratedRegex(@"^\d*$")]
-        private static partial Regex DigitsRegex();
 
         private bool IsValidInput(TextBox textBox, char input, Regex regex)
         {
@@ -24,7 +28,7 @@ namespace EmployeesDBApp
 
         private bool HasValidValue(TextBox textBox, Regex? regex = null)
         {
-            if (textBox == null) 
+            if (textBox == null)
                 return true;
 
             if (textBox.Text.Length == 0)
@@ -39,15 +43,89 @@ namespace EmployeesDBApp
         public FormMain()
         {
             InitializeComponent();
+
+            _employeesBList = new BindingList<Employee>();
+
+            InitializeContextMenu();
+        }
+
+        private void InitializeContextMenu()
+        {
+            _contextMenuStrip1 = new ContextMenuStrip();
+            _contextMenuStrip1.Items.Add("Delete", null, DeleteItem_Click);
+
+            dataGridView1.ContextMenuStrip = _contextMenuStrip1;
+        }
+
+        private void DeleteItem_Click(object? sender, EventArgs e)
+        {
+            if (dataGridView1.SelectedRows.Count > 0)
+            {
+                var selectedRow = (Employee) dataGridView1.SelectedRows[0].DataBoundItem;
+                _employeesBList.Remove(selectedRow);
+            }
         }
 
         private void FormMain_Load(object sender, EventArgs e)
         {
             groupBoxCRUD.Enabled = false;
             dataGridView1.Enabled = false;
-            dataGridView1.ReadOnly = true;
+            buttonAddRow.Enabled = false;
+            buttonSaveChangesToDb.Enabled = false;
+            dataGridView1.AllowUserToAddRows = false;
 
             textBoxRecordsCount.Text = "30";
+
+            dataGridView1.ContextMenuStrip = _contextMenuStrip1;
+        }
+
+        private void buttonSaveChangesToDb_Click(object sender, EventArgs e)
+        {
+            if (_dbContext == null)
+                return;
+
+            try
+            {
+                dataGridView1.EndEdit();
+
+                _dbContext.SaveChanges();
+
+                MessageBox.Show("Changes saved successfully.", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while saving changes:\n{ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void dataGridView1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                var hit = dataGridView1.HitTest(e.X, e.Y);
+                if (hit.RowIndex >= 0)
+                {
+                    dataGridView1.ClearSelection();
+                    dataGridView1.Rows[hit.RowIndex].Selected = true;
+                    dataGridView1.CurrentCell = dataGridView1.Rows[hit.RowIndex].Cells[0];
+                }
+            }
+        }
+
+        private void buttonAddRow_Click(object sender, EventArgs e)
+        {
+            if (_dbContext == null)
+                return;
+
+            var newEmployee = Employee.CreateDefault();
+            _employeesBList.Add(newEmployee);
+
+            int rowIndex = dataGridView1.Rows.Count - 1;
+            if (rowIndex >= 0)
+            {
+                dataGridView1.CurrentCell = dataGridView1.Rows[rowIndex].Cells[0];
+                dataGridView1.BeginEdit(true);
+            }
         }
 
         private void buttonInitialize_Click(object sender, EventArgs e)
@@ -63,23 +141,19 @@ namespace EmployeesDBApp
 
             groupBoxCRUD.Enabled = true;
             dataGridView1.Enabled = true;
+            buttonAddRow.Enabled = true;
+            buttonSaveChangesToDb.Enabled = true;
 
-            var records = _dbContext?.Employees.Take(0).ToList();
-            dataGridView1.DataSource = records;
+            _dbContext?.Employees.Load();
+            var data = _dbContext?.Employees.Local.ToBindingList();
+            if (data != null)
+            {
+                _employeesBList = data;
+                dataGridView1.DataSource = _employeesBList;
+            }
+
             dataGridView1.Columns["EmployeeID"].ReadOnly = true;
         }
-
-        //private void OnCRUDOperationStart()
-        //{
-        //    groupBoxCRUD.Enabled = false;
-        //    dataGridView1.ReadOnly = true;
-        //}
-
-        //private void OnCRUDOperationFinish()
-        //{
-        //    groupBoxCRUD.Enabled = true;
-        //    dataGridView1.ReadOnly = false;
-        //}
 
         private void buttonReadNRecords_Click(object sender, EventArgs e)
         {
@@ -124,7 +198,7 @@ namespace EmployeesDBApp
             var record = _dbContext?.Employees.Where(e => e.EmployeeID == id).FirstOrDefault();
             if (record == null)
             {
-                MessageBox.Show($"No such record with id = {id} for update", "Update request", 
+                MessageBox.Show($"No such record with id = {id} for update", "Update request",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
@@ -185,6 +259,92 @@ namespace EmployeesDBApp
             }
 
             _dbContext?.SaveChanges(true);
+        }
+
+        private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_dbContext != null && _dbContext.ChangeTracker.HasChanges())
+            {
+                var result = MessageBox.Show(
+                    "There are unsaved changes. Do you really want to exit without saving?",
+                    "Unsaved Changes",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (result == DialogResult.No)
+                {
+                    e.Cancel = true;
+                }
+            }
+        }
+
+        private void dataGridView1_CellValidating(object sender, DataGridViewCellValidatingEventArgs e)
+        {
+            if (dataGridView1.Columns[e.ColumnIndex].DataPropertyName is not string propertyName)
+                return;
+
+            var employeeType = typeof(Employee);
+            var property = employeeType.GetProperty(propertyName);
+            if (property == null)
+                return;
+
+            var value = e.FormattedValue?.ToString();
+
+            // Check [Required]
+            var requiredAttribute = property.GetCustomAttributes(typeof(RequiredAttribute), true).FirstOrDefault();
+            if (requiredAttribute != null && string.IsNullOrWhiteSpace(value))
+            {
+                dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} is required.";
+                e.Cancel = true;
+                return;
+            }
+
+            // Check [MaxLength]
+            var maxLengthAttribute = property.GetCustomAttributes(typeof(MaxLengthAttribute), true).FirstOrDefault() as MaxLengthAttribute;
+            if (maxLengthAttribute != null && value != null && value.Length > maxLengthAttribute.Length)
+            {
+                dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} must be at most {maxLengthAttribute.Length} characters.";
+                e.Cancel = true;
+                return;
+            }
+
+            // Validate data types
+            if (property.PropertyType == typeof(decimal))
+            {
+                if (!decimal.TryParse(value, out _))
+                {
+                    dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} must be a decimal number.";
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            else if (property.PropertyType == typeof(DateOnly))
+            {
+                if (!DateOnly.TryParse(value, out var date))
+                {
+                    dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} must be a valid date.";
+                    e.Cancel = true;
+                    return;
+                }
+
+                if (date > DateOnly.FromDateTime(DateTime.Today))
+                {
+                    dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} cannot be in the future.";
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            else if (property.PropertyType == typeof(int))
+            {
+                if (!int.TryParse(value, out _))
+                {
+                    dataGridView1.Rows[e.RowIndex].ErrorText = $"{propertyName} must be an integer.";
+                    e.Cancel = true;
+                    return;
+                }
+            }
+
+            dataGridView1.Rows[e.RowIndex].ErrorText = "";
         }
     }
 }

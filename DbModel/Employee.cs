@@ -28,11 +28,11 @@ namespace EmployeesDbApp.DbModel
         public static Employee CreateDefault() =>
             new Employee() 
             { 
-                FirstName = "", 
-                LastName = "", 
+                FirstName = "Алексей", 
+                LastName = "Новиков", 
                 DateOfBirth = DateOnly.FromDateTime(DateTime.Today), 
                 Email = "@", 
-                Salary = 0
+                Salary = 1000.00m
             };
     }
 }

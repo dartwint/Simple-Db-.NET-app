@@ -49,6 +49,8 @@
             buttonReadRecordWithId = new Button();
             buttonAddRecord = new Button();
             labelDataPreview = new Label();
+            buttonSaveChangesToDb = new Button();
+            buttonAddRow = new Button();
             ((System.ComponentModel.ISupportInitialize) dataGridView1).BeginInit();
             groupBoxCRUD.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -64,7 +66,7 @@
             // buttonInitialize
             // 
             buttonInitialize.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point,  204);
-            buttonInitialize.Location = new Point(281, 12);
+            buttonInitialize.Location = new Point(442, 12);
             buttonInitialize.Name = "buttonInitialize";
             buttonInitialize.Size = new Size(126, 43);
             buttonInitialize.TabIndex = 0;
@@ -79,6 +81,8 @@
             dataGridView1.Name = "dataGridView1";
             dataGridView1.Size = new Size(706, 483);
             dataGridView1.TabIndex = 2;
+            dataGridView1.CellValidating += dataGridView1_CellValidating;
+            dataGridView1.MouseDown += dataGridView1_MouseDown;
             // 
             // groupBoxCRUD
             // 
@@ -315,17 +319,42 @@
             labelDataPreview.Text = "Employees preview";
             labelDataPreview.TextAlign = ContentAlignment.MiddleCenter;
             // 
+            // buttonSaveChangesToDb
+            // 
+            buttonSaveChangesToDb.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point,  204);
+            buttonSaveChangesToDb.Location = new Point(807, 45);
+            buttonSaveChangesToDb.Name = "buttonSaveChangesToDb";
+            buttonSaveChangesToDb.Size = new Size(133, 40);
+            buttonSaveChangesToDb.TabIndex = 9;
+            buttonSaveChangesToDb.Text = "Save changes";
+            buttonSaveChangesToDb.UseVisualStyleBackColor = true;
+            buttonSaveChangesToDb.Click += buttonSaveChangesToDb_Click;
+            // 
+            // buttonAddRow
+            // 
+            buttonAddRow.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point,  204);
+            buttonAddRow.Location = new Point(234, 72);
+            buttonAddRow.Name = "buttonAddRow";
+            buttonAddRow.Size = new Size(78, 44);
+            buttonAddRow.TabIndex = 10;
+            buttonAddRow.Text = "ADD";
+            buttonAddRow.UseVisualStyleBackColor = true;
+            buttonAddRow.Click += buttonAddRow_Click;
+            // 
             // FormMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(952, 658);
+            Controls.Add(buttonAddRow);
+            Controls.Add(buttonSaveChangesToDb);
             Controls.Add(labelDataPreview);
             Controls.Add(groupBoxCRUD);
             Controls.Add(dataGridView1);
             Controls.Add(buttonInitialize);
             Name = "FormMain";
             Text = "FormMain";
+            FormClosing += FormMain_FormClosing;
             FormClosed += FormMain_FormClosed;
             Load += FormMain_Load;
             ((System.ComponentModel.ISupportInitialize) dataGridView1).EndInit();
@@ -369,5 +398,7 @@
         private TextBox textBoxDeleteId;
         private TableLayoutPanel tableLayoutPanel3;
         private TextBox textBoxUpdateId;
+        private Button buttonSaveChangesToDb;
+        private Button buttonAddRow;
     }
 }
